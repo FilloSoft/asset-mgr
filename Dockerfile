@@ -17,9 +17,14 @@ RUN pnpm install
 # Copy the rest of the application code
 COPY . .
 
+# Accept build arguments
+ARG NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
+ARG JWT_SECRET=default-jwt-secret-please-change-in-production
+
 # Set default environment variables for build
 ENV NODE_ENV=production
-ENV JWT_SECRET=default-jwt-secret-please-change-in-production
+ENV JWT_SECRET=${JWT_SECRET}
+ENV NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=${NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}
 
 # Build the Next.js application
 RUN pnpm build

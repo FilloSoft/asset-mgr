@@ -33,17 +33,28 @@ Railway is perfect for your Asset Manager! Here are the deployment options:
 
 In your Railway app service, add these variables:
 
+**IMPORTANT**: For Mapbox to work, you MUST set the environment variable as "Available during build" in Railway.
+
 ```bash
-# Database (Railway will provide these)
+# Database (Railway will provide these automatically)
 DATABASE_URL=postgresql://postgres:password@postgres.railway.internal:5432/railway
 
 # App Configuration
 NODE_ENV=production
 PORT=3000
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 
-# Mapbox (if you're using it)
-NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=your_mapbox_token_here
+# Mapbox (CRITICAL: Must be available during build!)
+NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=pk.eyJ1IjoibWFzaGlyb21hc2hpIiwiYSI6ImNtZ2NnbWoxNjE5ankyanF3endjY3VhMGEifQ.u3SD_mbte7l-pOAa2ixlaw
 ```
+
+**Setting Environment Variables in Railway:**
+
+1. Go to your app service in Railway dashboard
+2. Click "Variables" tab
+3. Add each variable above
+4. For `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN`: **MAKE SURE to check "Available during build"**
+5. This is crucial because Next.js embeds public environment variables during build time
 
 #### **4. Add Database Initialization**
 
@@ -274,7 +285,42 @@ CMD ["pnpm", "start"]
 6. **Custom Domains** ✅
 7. **Auto-scaling** ✅
 
-## 🚨 **Things to Watch Out For**
+## 🚨 **Common Issues & Troubleshooting**
+
+### **Mapbox Not Working**
+
+**Problem**: Map doesn't load, shows "Mapbox token not configured" error
+
+**Solution**:
+
+1. In Railway dashboard → Your app service → Variables
+2. Add `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` with your token
+3. **CRITICAL**: Check "Available during build" option
+4. Redeploy your app
+
+**Why this happens**: Next.js `NEXT_PUBLIC_*` variables are embedded into the client bundle during build time, not runtime.
+
+### **Database Connection Issues**
+
+**Problem**: App can't connect to database
+
+**Solution**:
+
+1. Ensure PostgreSQL service is running in Railway
+2. Check `DATABASE_URL` is automatically set
+3. Verify database initialization (see railway-init.sql)
+
+### **Build Failures**
+
+**Problem**: Docker build fails on Railway
+
+**Solution**:
+
+1. Check build logs in Railway dashboard
+2. Ensure all environment variables are set
+3. Verify Dockerfile syntax
+
+## 🔧 **Things to Watch Out For**
 
 ### **Database Initialization**
 
