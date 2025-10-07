@@ -17,6 +17,7 @@
     "migrate": "tsx scripts/migrate.ts"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
     "@types/mapbox-gl": "^3.4.1",
     "@types/pg": "^8.15.5",
     "class-variance-authority": "^0.7.1",

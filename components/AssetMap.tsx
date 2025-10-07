@@ -148,28 +148,34 @@ export default function AssetMap({
     assets.forEach((asset) => {
       // Create marker element
       const el = document.createElement('div');
-      el.className = 'asset-marker';
-      el.style.width = '20px';
-      el.style.height = '20px';
-      el.style.borderRadius = '50%';
-      el.style.backgroundColor = statusColors[asset.status];
-      el.style.border = '2px solid white';
-      el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
-      el.style.cursor = 'pointer';
-      el.style.transition = 'transform 0.2s';
+      el.className = 'mapbox-asset-marker';
+      el.style.cssText = `
+        width: 20px;
+        height: 20px;
+        background-color: ${statusColors[asset.status]};
+        border: 2px solid white;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      `;
       
       if (selectedAsset?.id === asset.id) {
-        el.style.transform = 'scale(1.2)';
-        el.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.3)';
+        el.style.cssText += `
+          width: 24px;
+          height: 24px;
+          box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3), 0 2px 4px rgba(0,0,0,0.3);
+        `;
       }
 
       el.addEventListener('mouseenter', () => {
-        el.style.transform = 'scale(1.1)';
+        el.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.2), 0 2px 8px rgba(0,0,0,0.4)';
       });
 
       el.addEventListener('mouseleave', () => {
-        if (selectedAsset?.id !== asset.id) {
-          el.style.transform = 'scale(1)';
+        if (selectedAsset?.id === asset.id) {
+          el.style.boxShadow = '0 0 0 4px rgba(59, 130, 246, 0.3), 0 2px 4px rgba(0,0,0,0.3)';
+        } else {
+          el.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
         }
       });
 
@@ -254,7 +260,7 @@ export default function AssetMap({
         closeOnClick: false
       }).setDOMContent(popupRoot);
 
-      // Create marker
+      // Create marker using the simple constructor
       const marker = new mapboxgl.Marker(el)
         .setLngLat([asset.location.lng, asset.location.lat])
         .setPopup(popup)

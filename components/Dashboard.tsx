@@ -5,6 +5,7 @@ import AssetList from './AssetList';
 import ProjectList from './ProjectList';
 import AssetProjectManager from './AssetProjectManager';
 import AssetMap from './AssetMap';
+import AssetDetailsSheet from './AssetDetailsSheet';
 
 interface Asset {
   id: string;
@@ -65,6 +66,7 @@ export default function Dashboard() {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [showProjectManager, setShowProjectManager] = useState(false);
+  const [showAssetDetails, setShowAssetDetails] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -106,6 +108,7 @@ export default function Dashboard() {
   const handleAssetClick = (asset: Asset) => {
     setSelectedAsset(asset);
     setSelectedProject(null);
+    setShowAssetDetails(true);
   };
 
   const handleProjectClick = (project: Project) => {
@@ -405,6 +408,20 @@ export default function Dashboard() {
           }}
         />
       )}
+
+      {/* Asset Details Sheet */}
+      <AssetDetailsSheet
+        asset={selectedAsset}
+        isOpen={showAssetDetails}
+        onClose={() => {
+          setShowAssetDetails(false);
+          setSelectedAsset(null);
+        }}
+        onManageProjects={(assetId) => {
+          setShowAssetDetails(false);
+          setShowProjectManager(true);
+        }}
+      />
     </div>
   );
 }
