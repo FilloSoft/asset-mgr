@@ -3,6 +3,18 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod';
 import { z } from 'zod';
 import { relations } from 'drizzle-orm';
 
+// Users table
+export const users = pgTable('users', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  email: text('email').notNull().unique(),
+  password: text('password').notNull(),
+  name: text('name').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+}, (table) => ({
+  emailIdx: index('users_email_idx').on(table.email),
+}));
+
 // Assets table
 export const assets = pgTable('assets', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -103,8 +115,25 @@ export const insertProjectSchema = createInsertSchema(projects, {
 export const selectProjectSchema = createSelectSchema(projects);
 export const updateProjectSchema = insertProjectSchema.partial().omit({ id: true, createdAt: true });
 
+// User schemas
+export const insertUserSchema = createInsertSchema(users, {
+  email: z.string().email('Invalid email address').trim().toLowerCase(),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  name: z.string().min(1, 'Name is required').trim(),
+});
+
+export const selectUserSchema = createSelectSchema(users);
+export const updateUserSchema = insertUserSchema.partial().omit({ id: true, createdAt: true, password: true });
+export const loginSchema = z.object({
+  email: z.string().email('Invalid email address').trim().toLowerCase(),
+  password: z.string().min(1, 'Password is required'),
+});
+
 // TypeScript types
 export type Asset = typeof assets.$inferSelect;
 export type NewAsset = typeof assets.$inferInsert;
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+

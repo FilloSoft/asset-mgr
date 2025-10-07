@@ -1,13 +1,32 @@
+'use client';
+
 import Image from "next/image";
 import Link from "next/link";
+import { useAuth } from "@/lib/AuthContext";
 
 export default function Home() {
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+  };
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
         <div className="text-center sm:text-left">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Asset Manager</h1>
           <p className="text-lg text-gray-600 mb-8">Track and manage your assets with location-based insights</p>
+          {user && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+              <p className="text-green-800">Welcome back, <strong>{user.name}</strong>!</p>
+              <button 
+                onClick={handleLogout}
+                className="mt-2 text-sm text-green-600 hover:text-green-500 underline"
+              >
+                Logout
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6 max-w-md">
