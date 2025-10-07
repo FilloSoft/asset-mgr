@@ -1,0 +1,238 @@
+name: 'Build and Release Asset Manager'
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Get version
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          echo "VERSION=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+        else
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Build Docker image
+      run: |
+        docker build -t asset-mgr-app:${{ steps.version.outputs.VERSION }} .
+        
+    - name: Export Docker image
+      run: |
+        docker save -o asset-mgr-app-${{ steps.version.outputs.VERSION }}.tar asset-mgr-app:${{ steps.version.outputs.VERSION }}
+        
+    - name: Create release package
+      run: |
+        mkdir -p release-package
+        
+        # Copy essential files for friends
+        cp asset-mgr-app-${{ steps.version.outputs.VERSION }}.tar release-package/
+        cp docker-compose.friend.yml release-package/docker-compose.yml
+        cp friend-setup.ps1 release-package/
+        cp README-FRIEND.md release-package/README.md
+        cp init.sql release-package/
+        
+        # Create version info
+        echo "Asset Manager ${{ steps.version.outputs.VERSION }}" > release-package/VERSION.txt
+        echo "Built on: $(date)" >> release-package/VERSION.txt
+        echo "Docker image: asset-mgr-app-${{ steps.version.outputs.VERSION }}.tar" >> release-package/VERSION.txt
+        
+        # Create setup instructions
+        cat > release-package/QUICK-SETUP.md << 'EOF'
+        # Quick Setup Guide
+        
+        ## For Windows Users (Recommended)
+        1. Download and extract all files
+        2. Open PowerShell as Administrator
+        3. Navigate to the extracted folder
+        4. Run: `.\friend-setup.ps1`
+        5. Access the app at: http://localhost:3000
+        
+        ## For Other Operating Systems
+        1. Download and extract all files
+        2. Load the Docker image: `docker load -i asset-mgr-app-${{ steps.version.outputs.VERSION }}.tar`
+        3. Start the services: `docker-compose up -d`
+        4. Access the app at: http://localhost:3000
+        
+        ## What's Included
+        - Asset Manager application
+        - PostgreSQL database with sample data
+        - Web-based database admin interface
+        - Interactive map for asset visualization
+        - Project management system
+        EOF
+        
+        # Create Windows batch file alternative
+        cat > release-package/setup.bat << 'EOF'
+        @echo off
+        echo Starting Asset Manager setup...
+        echo.
+        
+        echo Loading Docker image...
+        docker load -i asset-mgr-app-${{ steps.version.outputs.VERSION }}.tar
+        
+        echo Starting services...
+        docker-compose up -d
+        
+        echo.
+        echo Setup complete!
+        echo Access the application at: http://localhost:3000
+        echo Access database admin at: http://localhost:8080
+        echo.
+        echo To stop the application: docker-compose down
+        pause
+        EOF
+        
+        # Create Linux/Mac setup script
+        cat > release-package/setup.sh << 'EOF'
+        #!/bin/bash
+        echo "Starting Asset Manager setup..."
+        echo
+        
+        echo "Loading Docker image..."
+        docker load -i asset-mgr-app-${{ steps.version.outputs.VERSION }}.tar
+        
+        echo "Starting services..."
+        docker-compose up -d
+        
+        echo
+        echo "Setup complete!"
+        echo "Access the application at: http://localhost:3000"
+        echo "Access database admin at: http://localhost:8080"
+        echo
+        echo "To stop the application: docker-compose down"
+        EOF
+        
+        chmod +x release-package/setup.sh
+        
+        # Create ZIP archive
+        cd release-package
+        zip -r ../asset-manager-${{ steps.version.outputs.VERSION }}.zip .
+        cd ..
+        
+        # Create tar.gz archive for Linux/Mac users
+        tar -czf asset-manager-${{ steps.version.outputs.VERSION }}.tar.gz -C release-package .
+        
+    - name: Calculate checksums
+      run: |
+        echo "Calculating checksums..."
+        sha256sum asset-manager-${{ steps.version.outputs.VERSION }}.zip > checksums.txt
+        sha256sum asset-manager-${{ steps.version.outputs.VERSION }}.tar.gz >> checksums.txt
+        cat checksums.txt
+        
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.version.outputs.VERSION }}
+        release_name: Asset Manager ${{ steps.version.outputs.VERSION }}
+        body: |
+          # Asset Manager ${{ steps.version.outputs.VERSION }}
+          
+          A complete asset management system with interactive maps and project tracking.
+          
+          ## Features
+          - 🗺️ Interactive map-based asset visualization
+          - 📊 Asset and project management dashboard
+          - 🔗 Asset-project relationship tracking
+          - 📱 Modern, responsive web interface
+          - 🔍 Advanced search and filtering
+          - 📈 Statistics and reporting
+          
+          ## Quick Start
+          
+          ### Windows Users
+          1. Download `asset-manager-${{ steps.version.outputs.VERSION }}.zip`
+          2. Extract all files
+          3. Run `friend-setup.ps1` as Administrator
+          4. Open http://localhost:3000
+          
+          ### Linux/Mac Users
+          1. Download `asset-manager-${{ steps.version.outputs.VERSION }}.tar.gz`
+          2. Extract: `tar -xzf asset-manager-${{ steps.version.outputs.VERSION }}.tar.gz`
+          3. Run: `./setup.sh`
+          4. Open http://localhost:3000
+          
+          ## System Requirements
+          - Docker and Docker Compose installed
+          - 4GB+ RAM recommended
+          - 2GB+ free disk space
+          
+          ## Included Services
+          - **Asset Manager**: http://localhost:3000
+          - **Database Admin**: http://localhost:8080 (admin@admin.com / admin)
+          
+          ## Sample Data
+          The application includes sample assets and projects to get you started immediately.
+          
+          ## Support
+          See the included README.md for detailed setup instructions and troubleshooting.
+          
+          ---
+          
+          **File Checksums:**
+          ```
+          $(cat checksums.txt)
+          ```
+        draft: false
+        prerelease: false
+        
+    - name: Upload ZIP Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./asset-manager-${{ steps.version.outputs.VERSION }}.zip
+        asset_name: asset-manager-${{ steps.version.outputs.VERSION }}.zip
+        asset_content_type: application/zip
+        
+    - name: Upload TAR.GZ Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./asset-manager-${{ steps.version.outputs.VERSION }}.tar.gz
+        asset_name: asset-manager-${{ steps.version.outputs.VERSION }}.tar.gz
+        asset_content_type: application/gzip
+        
+    - name: Upload Checksums
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./checksums.txt
+        asset_name: checksums.txt
+        asset_content_type: text/plain
