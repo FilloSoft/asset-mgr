@@ -17,6 +17,10 @@ RUN pnpm install
 # Copy the rest of the application code
 COPY . .
 
+# Set default environment variables for build
+ENV NODE_ENV=production
+ENV JWT_SECRET=default-jwt-secret-please-change-in-production
+
 # Build the Next.js application
 RUN pnpm build
 

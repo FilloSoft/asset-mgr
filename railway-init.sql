@@ -1,6 +1,19 @@
 -- Railway PostgreSQL Initialization Script
 -- This creates the basic schema for Asset Manager
 
+-- Create the users table for authentication
+CREATE TABLE IF NOT EXISTS users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    name TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+-- Create index on email for faster lookups
+CREATE INDEX IF NOT EXISTS users_email_idx ON users(email);
+
 -- Create the assets table
 CREATE TABLE IF NOT EXISTS assets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
