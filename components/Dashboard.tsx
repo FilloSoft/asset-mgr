@@ -32,11 +32,6 @@ interface Project {
   description?: string;
   status: 'planning' | 'active' | 'on-hold' | 'completed' | 'cancelled';
   assetId?: string;
-  taxDecNo: string;
-  declaredOwner: string;
-  marketValue: string;
-  assessedValue: string;
-  carStatus?: string;
   startDate?: string;
   endDate?: string;
   assignedAt?: string;
@@ -359,14 +354,6 @@ export default function Dashboard() {
                       <div>
                         <span className="text-sm text-gray-500">Status:</span>
                         <p className="font-medium capitalize">{selectedProject.status.replace('-', ' ')}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-gray-500">Tax Dec No:</span>
-                        <p className="font-medium">{selectedProject.taxDecNo}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-gray-500">Owner:</span>
-                        <p className="font-medium">{selectedProject.declaredOwner}</p>
                       </div>
                       <div>
                         <span className="text-sm text-gray-500">Asset:</span>

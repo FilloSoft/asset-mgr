@@ -15,10 +15,6 @@ interface Project {
   description?: string;
   status: 'planning' | 'active' | 'on-hold' | 'completed' | 'cancelled';
   assetId?: string;
-  taxDecNo: string;
-  declaredOwner: string;
-  marketValue: string;
-  assessedValue: string;
   carStatus?: string;
   startDate?: string;
   endDate?: string;
@@ -348,13 +344,6 @@ export default function ProjectList({ onProjectSelect, selectedProjectId, filter
                     <span>Unassigned</span>
                   </div>
                 )}
-              </div>
-
-              {/* Property Info */}
-              <div className="text-xs text-gray-500 space-y-1 mb-3">
-                <div>📋 Tax Dec: {project.taxDecNo}</div>
-                <div>👤 Owner: {project.declaredOwner}</div>
-                <div>💰 Market: {project.marketValue}</div>
               </div>
 
               {/* Timeline */}

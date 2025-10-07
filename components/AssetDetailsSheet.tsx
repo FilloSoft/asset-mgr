@@ -122,10 +122,9 @@ export default function AssetDetailsSheet({ asset, isOpen, onClose, onManageProj
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="w-[400px] sm:w-[540px] p-0 bg-white dark:bg-slate-900">
         {/* Hero Header */}
-        <div className="p-6 text-white">
-          <div className="">
+        <div className="text-white">
             <SheetHeader className="text-left">
-              <SheetTitle className="flex items-center gap-4 text-2xl font-bold mb-2">
+              <SheetTitle className="flex items-center gap-4 text-2xl font-bold">
                 <div className="text-4xl">{statusIcons[asset.status]}</div>
                 <div>
                   <div className="text-2xl font-bold">{asset.name}</div>
@@ -133,7 +132,6 @@ export default function AssetDetailsSheet({ asset, isOpen, onClose, onManageProj
                 </div>
               </SheetTitle>
             </SheetHeader>
-          </div>
         </div>
 
         <div className="p-4 space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
