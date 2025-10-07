@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # Next.js application
   nextjs-app:
-    image: asset-mgr-nextjs-app  # Uses the imported image
+    image: asset-mgr-app:latest  # Uses the imported image
     ports:
       - "3000:3000"
     environment:

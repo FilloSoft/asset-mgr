@@ -1,5 +1,9 @@
 name: 'Build and Release Asset Manager'
 
+permissions:
+  contents: write
+  actions: read
+
 on:
   push:
     tags:
@@ -43,18 +47,19 @@ jobs:
         
     - name: Build Docker image
       run: |
-        docker build -t asset-mgr-app:${{ steps.version.outputs.VERSION }} .
+        docker build -t asset-mgr-app:latest .
+        docker tag asset-mgr-app:latest asset-mgr-app:${{ steps.version.outputs.VERSION }}
         
     - name: Export Docker image
       run: |
-        docker save -o asset-mgr-app-${{ steps.version.outputs.VERSION }}.tar asset-mgr-app:${{ steps.version.outputs.VERSION }}
+        docker save -o asset-mgr-app.tar asset-mgr-app:latest
         
     - name: Create release package
       run: |
         mkdir -p release-package
         
         # Copy essential files for friends
-        cp asset-mgr-app-${{ steps.version.outputs.VERSION }}.tar release-package/
+        cp asset-mgr-app.tar release-package/
         cp docker-compose.friend.yml release-package/docker-compose.yml
         cp friend-setup.ps1 release-package/
         cp README-FRIEND.md release-package/README.md
@@ -63,7 +68,7 @@ jobs:
         # Create version info
         echo "Asset Manager ${{ steps.version.outputs.VERSION }}" > release-package/VERSION.txt
         echo "Built on: $(date)" >> release-package/VERSION.txt
-        echo "Docker image: asset-mgr-app-${{ steps.version.outputs.VERSION }}.tar" >> release-package/VERSION.txt
+        echo "Docker image: asset-mgr-app.tar" >> release-package/VERSION.txt
         
         # Create setup instructions
         cat > release-package/QUICK-SETUP.md << 'EOF'
@@ -78,7 +83,7 @@ jobs:
         
         ## For Other Operating Systems
         1. Download and extract all files
-        2. Load the Docker image: `docker load -i asset-mgr-app-${{ steps.version.outputs.VERSION }}.tar`
+        2. Load the Docker image: `docker load -i asset-mgr-app.tar`
         3. Start the services: `docker-compose up -d`
         4. Access the app at: http://localhost:3000
         
@@ -97,7 +102,7 @@ jobs:
         echo.
         
         echo Loading Docker image...
-        docker load -i asset-mgr-app-${{ steps.version.outputs.VERSION }}.tar
+        docker load -i asset-mgr-app.tar
         
         echo Starting services...
         docker-compose up -d
@@ -118,7 +123,7 @@ jobs:
         echo
         
         echo "Loading Docker image..."
-        docker load -i asset-mgr-app-${{ steps.version.outputs.VERSION }}.tar
+        docker load -i asset-mgr-app.tar
         
         echo "Starting services..."
         docker-compose up -d
@@ -150,12 +155,12 @@ jobs:
         
     - name: Create Release
       id: create_release
-      uses: actions/create-release@v1
+      uses: softprops/action-gh-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ steps.version.outputs.VERSION }}
-        release_name: Asset Manager ${{ steps.version.outputs.VERSION }}
+        name: Asset Manager ${{ steps.version.outputs.VERSION }}
         body: |
           # Asset Manager ${{ steps.version.outputs.VERSION }}
           
@@ -206,33 +211,7 @@ jobs:
           ```
         draft: false
         prerelease: false
-        
-    - name: Upload ZIP Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./asset-manager-${{ steps.version.outputs.VERSION }}.zip
-        asset_name: asset-manager-${{ steps.version.outputs.VERSION }}.zip
-        asset_content_type: application/zip
-        
-    - name: Upload TAR.GZ Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./asset-manager-${{ steps.version.outputs.VERSION }}.tar.gz
-        asset_name: asset-manager-${{ steps.version.outputs.VERSION }}.tar.gz
-        asset_content_type: application/gzip
-        
-    - name: Upload Checksums
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./checksums.txt
-        asset_name: checksums.txt
-        asset_content_type: text/plain
+        files: |
+          asset-manager-${{ steps.version.outputs.VERSION }}.zip
+          asset-manager-${{ steps.version.outputs.VERSION }}.tar.gz
+          checksums.txt

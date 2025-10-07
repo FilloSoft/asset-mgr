@@ -18,7 +18,7 @@ docker pull dpage/pgadmin4:latest
 
 # Start the application
 Write-Host "Starting the application..." -ForegroundColor Green
-docker-compose -f docker-compose.friend.yml up -d
+docker-compose up -d
 
 Write-Host ""
 Write-Host "Application is starting up!" -ForegroundColor Green
@@ -27,4 +27,4 @@ Write-Host "  - App: http://localhost:3000" -ForegroundColor Yellow
 Write-Host "  - pgAdmin: http://localhost:8080" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "It may take a minute for the database to initialize..." -ForegroundColor Cyan
-Write-Host "To stop: docker-compose -f docker-compose.friend.yml down" -ForegroundColor Gray
+Write-Host "To stop: docker-compose down" -ForegroundColor Gray

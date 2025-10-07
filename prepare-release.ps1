@@ -23,7 +23,8 @@ if (Test-Path $releaseDir) {
 New-Item -ItemType Directory -Path $releaseDir | Out-Null
 
 Write-Host "Building Docker image..." -ForegroundColor Blue
-docker build -t asset-mgr-app:$Version .
+docker build -t asset-mgr-app:latest .
+docker tag asset-mgr-app:latest asset-mgr-app:$Version
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error: Docker build failed!" -ForegroundColor Red
@@ -31,7 +32,7 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "Exporting Docker image..." -ForegroundColor Blue
-docker save -o "$releaseDir\asset-mgr-app-$Version.tar" asset-mgr-app:$Version
+docker save -o "$releaseDir\asset-mgr-app.tar" asset-mgr-app:latest
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Error: Docker export failed!" -ForegroundColor Red
@@ -50,7 +51,7 @@ Copy-Item "init.sql" "$releaseDir\"
 @"
 Asset Manager $Version
 Built on: $(Get-Date)
-Docker image: asset-mgr-app-$Version.tar
+Docker image: asset-mgr-app.tar
 
 This package contains everything needed to run the Asset Manager application.
 "@ | Out-File -FilePath "$releaseDir\VERSION.txt" -Encoding UTF8
@@ -68,7 +69,7 @@ This package contains everything needed to run the Asset Manager application.
 
 ## For Other Operating Systems
 1. Download and extract all files
-2. Load the Docker image: ``docker load -i asset-mgr-app-$Version.tar``
+2. Load the Docker image: ``docker load -i asset-mgr-app.tar``
 3. Start the services: ``docker-compose up -d``
 4. Access the app at: http://localhost:3000
 
@@ -103,7 +104,7 @@ echo Starting Asset Manager setup...
 echo.
 
 echo Loading Docker image...
-docker load -i asset-mgr-app-$Version.tar
+docker load -i asset-mgr-app.tar
 
 if %ERRORLEVEL% NEQ 0 (
     echo Error loading Docker image!
@@ -136,7 +137,7 @@ echo "Starting Asset Manager setup..."
 echo
 
 echo "Loading Docker image..."
-docker load -i asset-mgr-app-$Version.tar
+docker load -i asset-mgr-app.tar
 
 if [ `$? -ne 0 ]; then
     echo "Error loading Docker image!"
