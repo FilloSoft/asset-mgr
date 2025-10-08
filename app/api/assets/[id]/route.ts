@@ -4,31 +4,22 @@ import { assets, updateAssetSchema, projects } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
+import { assertUuid } from '@/lib/services/validation';
+
 // GET /api/assets/[id] - Get a specific asset
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-
-    // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(id)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid asset ID format',
-        },
-        { status: 400 }
-      );
-    }
+    const assetId = assertUuid(id, 'asset');
 
     // Get the asset
     const [asset] = await db
       .select()
       .from(assets)
-      .where(eq(assets.id, id));
+      .where(eq(assets.id, assetId));
 
     if (!asset) {
       return NextResponse.json(
@@ -36,7 +27,7 @@ export async function GET(
           success: false,
           error: 'Asset not found',
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -44,7 +35,7 @@ export async function GET(
     const relatedProjects = await db
       .select()
       .from(projects)
-      .where(eq(projects.assetId, id));
+      .where(eq(projects.assetId, assetId));
 
     return NextResponse.json({
       success: true,
@@ -60,7 +51,7 @@ export async function GET(
         success: false,
         error: 'Failed to fetch asset',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -68,23 +59,12 @@ export async function GET(
 // PUT /api/assets/[id] - Update a specific asset
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
+    const assetId = assertUuid(id, 'asset');
     const body = await request.json();
-
-    // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(id)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid asset ID format',
-        },
-        { status: 400 }
-      );
-    }
 
     // Validate input with Zod schema
     const validatedData = updateAssetSchema.parse(body);
@@ -95,7 +75,7 @@ export async function PUT(
         ...validatedData,
         updatedAt: new Date(),
       })
-      .where(eq(assets.id, id))
+      .where(eq(assets.id, assetId))
       .returning();
 
     if (!updatedAsset) {
@@ -104,7 +84,7 @@ export async function PUT(
           success: false,
           error: 'Asset not found',
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -112,7 +92,7 @@ export async function PUT(
     const relatedProjects = await db
       .select()
       .from(projects)
-      .where(eq(projects.assetId, id));
+      .where(eq(projects.assetId, assetId));
 
     return NextResponse.json({
       success: true,
@@ -133,7 +113,7 @@ export async function PUT(
           error: 'Validation failed',
           details: errors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -142,7 +122,7 @@ export async function PUT(
         success: false,
         error: 'Failed to update asset',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -150,33 +130,22 @@ export async function PUT(
 // DELETE /api/assets/[id] - Delete a specific asset
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-
-    // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(id)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid asset ID format',
-        },
-        { status: 400 }
-      );
-    }
+    const assetId = assertUuid(id, 'asset');
 
     // First, unlink all projects from this asset
     await db
       .update(projects)
       .set({ assetId: null, assignedAt: null })
-      .where(eq(projects.assetId, id));
+      .where(eq(projects.assetId, assetId));
 
     // Then delete the asset
     const [deletedAsset] = await db
       .delete(assets)
-      .where(eq(assets.id, id))
+      .where(eq(assets.id, assetId))
       .returning();
 
     if (!deletedAsset) {
@@ -185,7 +154,7 @@ export async function DELETE(
           success: false,
           error: 'Asset not found',
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -201,7 +170,7 @@ export async function DELETE(
         success: false,
         error: 'Failed to delete asset',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

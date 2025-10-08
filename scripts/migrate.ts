@@ -1,25 +1,28 @@
-import { drizzle } from 'drizzle-orm/postgres-js';
-import { migrate } from 'drizzle-orm/postgres-js/migrator';
-import postgres from 'postgres';
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
 
-const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/assetmgr';
+import { createDatabaseClient } from "@/lib/database";
+
+const DATABASE_URL = process.env.DATABASE_URL;
+
+if (!DATABASE_URL) {
+  console.error("Missing DATABASE_URL environment variable");
+  process.exit(1);
+}
 
 async function runMigrations() {
+  const migrationClient = createDatabaseClient();
+  const db = drizzle(migrationClient);
+
   try {
-    // Create connection for migrations
-    const migrationClient = postgres(DATABASE_URL, { max: 1 });
-    const db = drizzle(migrationClient);
-    
-    // Run migrations
-    console.log('Running migrations...');
-    await migrate(db, { migrationsFolder: './db/migrations' });
-    console.log('✅ Migrations completed successfully');
-    
-    // Close connection
-    await migrationClient.end();
+    console.log("Running migrations...");
+    await migrate(db, { migrationsFolder: "./db/migrations" });
+    console.log("Migrations completed successfully");
   } catch (error) {
-    console.error('❌ Migration failed:', error);
+    console.error("Migration failed:", error);
     process.exit(1);
+  } finally {
+    await migrationClient.end({ timeout: 5 });
   }
 }
 

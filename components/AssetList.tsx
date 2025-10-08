@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import AssetForm from './AssetForm';
+import AssetForm from './asset-form';
 
 interface Asset {
   id: string;

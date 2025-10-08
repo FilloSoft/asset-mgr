@@ -4,31 +4,22 @@ import { projects, assets } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
+import { assertUuid } from '@/lib/services/validation';
+
 // GET /api/assets/[id]/projects - Get all projects for a specific asset
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
-
-    // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(id)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid asset ID format',
-        },
-        { status: 400 }
-      );
-    }
+    const assetId = assertUuid(id, 'asset');
 
     // Check if asset exists
     const [asset] = await db
       .select()
       .from(assets)
-      .where(eq(assets.id, id));
+      .where(eq(assets.id, assetId));
 
     if (!asset) {
       return NextResponse.json(
@@ -36,7 +27,7 @@ export async function GET(
           success: false,
           error: 'Asset not found',
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -44,13 +35,13 @@ export async function GET(
     const relatedProjects = await db
       .select()
       .from(projects)
-      .where(eq(projects.assetId, id));
+      .where(eq(projects.assetId, assetId));
 
     return NextResponse.json({
       success: true,
       data: relatedProjects,
       meta: {
-        assetId: id,
+        assetId,
         assetName: asset.name,
         totalProjects: relatedProjects.length,
       },
@@ -62,7 +53,7 @@ export async function GET(
         success: false,
         error: 'Failed to fetch asset projects',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -70,29 +61,18 @@ export async function GET(
 // POST /api/assets/[id]/projects - Create a new project and assign it to this asset
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
+    const assetId = assertUuid(id, 'asset');
     const body = await request.json();
-
-    // Validate UUID format
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(id)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid asset ID format',
-        },
-        { status: 400 }
-      );
-    }
 
     // Check if asset exists
     const [asset] = await db
       .select()
       .from(assets)
-      .where(eq(assets.id, id));
+      .where(eq(assets.id, assetId));
 
     if (!asset) {
       return NextResponse.json(
@@ -100,7 +80,7 @@ export async function POST(
           success: false,
           error: 'Asset not found',
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -109,16 +89,20 @@ export async function POST(
       name: z.string().min(1, 'Project name is required').trim(),
       description: z.string().optional(),
       status: z.enum(['planning', 'active', 'on-hold', 'completed', 'cancelled']).default('planning'),
-      startDate: z.union([
-        z.string().datetime('Invalid date format').transform(str => new Date(str)),
-        z.date(),
-        z.null()
-      ]).optional(),
-      endDate: z.union([
-        z.string().datetime('Invalid date format').transform(str => new Date(str)),
-        z.date(),
-        z.null()
-      ]).optional(),
+      startDate: z
+        .union([
+          z.string().datetime('Invalid date format').transform((str) => new Date(str)),
+          z.date(),
+          z.null(),
+        ])
+        .optional(),
+      endDate: z
+        .union([
+          z.string().datetime('Invalid date format').transform((str) => new Date(str)),
+          z.date(),
+          z.null(),
+        ])
+        .optional(),
     });
 
     const validatedData = projectSchema.parse(body);
@@ -128,7 +112,7 @@ export async function POST(
       .insert(projects)
       .values({
         ...validatedData,
-        assetId: id,
+        assetId,
         assignedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -139,24 +123,24 @@ export async function POST(
         success: true,
         data: {
           ...newProject,
-          asset: asset,
+          asset,
         },
         message: 'Project created and assigned to asset successfully',
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
     console.error('Error creating project for asset:', error);
 
     if (error instanceof z.ZodError) {
-      const errors = error.issues.map((err: any) => `${err.path.join('.')}: ${err.message}`);
+      const errors = error.issues.map((issue) => `${issue.path.join('.')}: ${issue.message}`);
       return NextResponse.json(
         {
           success: false,
           error: 'Validation failed',
           details: errors,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -165,7 +149,7 @@ export async function POST(
         success: false,
         error: 'Failed to create project for asset',
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
