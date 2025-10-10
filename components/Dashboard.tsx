@@ -1,13 +1,36 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import AssetList from './AssetList';
-import ProjectList from './ProjectList';
-import AssetProjectManager from './AssetProjectManager';
-import AssetMap from './AssetMap';
-import AssetDetailsSheet from './AssetDetailsSheet';
+import type { JSX, ReactNode } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { BarChart3, Briefcase, ClipboardList, FolderX, X } from "lucide-react";
 
-interface Asset {
+import AssetDetailsSheet from "./AssetDetailsSheet";
+import AssetMap from "./AssetMap";
+import AssetProjectManager from "./AssetProjectManager";
+
+type AssetStatus = "active" | "inactive" | "maintenance" | "retired";
+type ProjectStatus =
+  | "planning"
+  | "active"
+  | "on-hold"
+  | "completed"
+  | "cancelled"
+  | string;
+
+interface DashboardProject {
+  id: string;
+  name: string;
+  status: ProjectStatus;
+  assignedAt?: string;
+  description?: string;
+  asset?: {
+    id: string;
+    name: string;
+    status: AssetStatus;
+  };
+}
+
+interface DashboardAsset {
   id: string;
   name: string;
   description: string;
@@ -15,398 +38,380 @@ interface Asset {
     lat: number;
     lng: number;
   };
-  status: 'active' | 'inactive' | 'maintenance' | 'retired';
-  projects: Array<{
-    id: string;
-    name: string;
-    status: string;
-    assignedAt?: string;
-  }>;
+  status: AssetStatus;
+  projects: DashboardProject[];
   createdAt: string;
   updatedAt: string;
 }
 
-interface Project {
-  id: string;
-  name: string;
-  description?: string;
-  status: 'planning' | 'active' | 'on-hold' | 'completed' | 'cancelled';
-  assetId?: string;
-  startDate?: string;
-  endDate?: string;
-  assignedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-  asset?: {
-    id: string;
-    name: string;
-    status: string;
-  };
+interface StatsSummary {
+  totalAssets: number;
+  totalProjects: number;
+  assignedProjects: number;
+  unassignedProjects: number;
+  assignmentRate: number;
 }
 
 interface Stats {
-  summary: {
-    totalAssets: number;
-    totalProjects: number;
-    assignedProjects: number;
-    unassignedProjects: number;
-    assignmentRate: number;
-  };
+  summary: StatsSummary;
   assetsByStatus: Record<string, number>;
   projectsByStatus: Record<string, number>;
 }
 
-export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'assets' | 'projects'>('overview');
-  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [showProjectManager, setShowProjectManager] = useState(false);
-  const [showAssetDetails, setShowAssetDetails] = useState(false);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [statsLoading, setStatsLoading] = useState(true);
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+}
 
-  useEffect(() => {
-    fetchStats();
-    fetchAssets();
-  }, []);
-
-  const fetchStats = async () => {
-    try {
-      setStatsLoading(true);
-      const response = await fetch('/api/assets/stats');
-      const data = await response.json();
-      
-      if (data.success) {
-        setStats(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    } finally {
-      setStatsLoading(false);
-    }
+interface AssetsResponse {
+  id: string;
+  name: string;
+  description?: string | null;
+  location: {
+    lat: number;
+    lng: number;
   };
+  status: AssetStatus;
+  projects?: Array<{
+    id: string;
+    name: string;
+    status?: ProjectStatus | null;
+    assignedAt?: string | Date | null;
+    description?: string | null;
+  }>;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}
 
-  const fetchAssets = async () => {
-    try {
-      const response = await fetch('/api/assets?limit=100');
-      const data = await response.json();
-      
-      if (data.success) {
-        setAssets(data.data);
-      }
-    } catch (error) {
-      console.error('Error fetching assets:', error);
-    }
-  };
+const ASSET_STATUS_COLORS: Record<string, string> = {
+  active: "text-green-600",
+  inactive: "text-gray-600",
+  maintenance: "text-yellow-600",
+  retired: "text-red-600",
+};
 
-  const handleAssetClick = (asset: Asset) => {
-    setSelectedAsset(asset);
-    setSelectedProject(null);
-    setShowAssetDetails(true);
-  };
+const PROJECT_STATUS_COLORS: Record<string, string> = {
+  planning: "text-blue-600",
+  active: "text-green-600",
+  "on-hold": "text-yellow-600",
+  completed: "text-gray-600",
+  cancelled: "text-red-600",
+};
 
-  const handleProjectClick = (project: Project) => {
-    setSelectedProject(project);
-    setSelectedAsset(null);
-  };
+function getStatusColor(
+  status: string,
+  type: "asset" | "project" = "asset",
+): string {
+  if (type === "asset") {
+    return ASSET_STATUS_COLORS[status] ?? "text-gray-600";
+  }
 
-  const handleMapClick = (lat: number, lng: number) => {
-    console.log('Map clicked at:', { lat, lng });
-    // Could be used to create new assets at clicked location
-  };
+  return PROJECT_STATUS_COLORS[status] ?? "text-gray-600";
+}
 
-  const getStatusColor = (status: string, type: 'asset' | 'project' = 'asset') => {
-    if (type === 'asset') {
-      switch (status) {
-        case 'active': return 'text-green-600';
-        case 'inactive': return 'text-gray-600';
-        case 'maintenance': return 'text-yellow-600';
-        case 'retired': return 'text-red-600';
-        default: return 'text-gray-600';
-      }
-    } else {
-      switch (status) {
-        case 'planning': return 'text-blue-600';
-        case 'active': return 'text-green-600';
-        case 'on-hold': return 'text-yellow-600';
-        case 'completed': return 'text-gray-600';
-        case 'cancelled': return 'text-red-600';
-        default: return 'text-gray-600';
-      }
-    }
-  };
+interface StatCardProps {
+  title: string;
+  value: number | string;
+  icon: ReactNode;
+  subtitle?: string;
+}
 
-  const StatCard = ({ title, value, subtitle, icon }: { title: string; value: number; subtitle?: string; icon: string }) => (
-    <div className="bg-white rounded-lg shadow p-6">
+function StatCard({ title, value, icon, subtitle }: StatCardProps) {
+  return (
+    <div className="rounded-lg bg-white p-6 shadow">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
-          {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
+          <p className="text-sm font-medium text-gray-500">{title}</p>
+          <p className="mt-2 text-3xl font-semibold text-gray-900">{value}</p>
+          {subtitle ? (
+            <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
+          ) : null}
         </div>
-        <div className="text-3xl">{icon}</div>
+        <div className="text-blue-600" aria-hidden>
+          {icon}
+        </div>
       </div>
     </div>
   );
+}
+
+export default function Dashboard(): JSX.Element {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [assets, setAssets] = useState<DashboardAsset[]>([]);
+  const [selectedAsset, setSelectedAsset] = useState<DashboardAsset | null>(
+    null,
+  );
+  const [isProjectManagerOpen, setIsProjectManagerOpen] = useState(false);
+  const [isAssetDetailsOpen, setIsAssetDetailsOpen] = useState(false);
+
+  const parseProjects = useCallback(
+    (projects: AssetsResponse["projects"]): DashboardProject[] => {
+      if (!projects) {
+        return [];
+      }
+
+      return projects.map((project) => {
+        const assignedAt = project.assignedAt
+          ? typeof project.assignedAt === "string"
+            ? project.assignedAt
+            : project.assignedAt.toISOString()
+          : undefined;
+
+        return {
+          id: project.id,
+          name: project.name,
+          status: project.status ?? "active",
+          assignedAt,
+          description: project.description ?? undefined,
+        };
+      });
+    },
+    [],
+  );
+
+  const parseAsset = useCallback(
+    (asset: AssetsResponse): DashboardAsset => {
+      const createdAt = asset.createdAt
+        ? typeof asset.createdAt === "string"
+          ? asset.createdAt
+          : asset.createdAt.toISOString()
+        : new Date().toISOString();
+
+      const updatedAt = asset.updatedAt
+        ? typeof asset.updatedAt === "string"
+          ? asset.updatedAt
+          : asset.updatedAt.toISOString()
+        : createdAt;
+
+      return {
+        id: asset.id,
+        name: asset.name,
+        description: asset.description ?? "",
+        location: asset.location,
+        status: asset.status,
+        createdAt,
+        updatedAt,
+        projects: parseProjects(asset.projects),
+      };
+    },
+    [parseProjects],
+  );
+
+  const handleStatsFetch = useCallback(async () => {
+    try {
+      setStatsLoading(true);
+      const response = await fetch("/api/assets/stats");
+
+      if (!response.ok) {
+        throw new Error(`Failed to load stats: ${response.status}`);
+      }
+
+      const payload: ApiResponse<Stats> = await response.json();
+      setStats(payload.success ? payload.data : null);
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      setStats(null);
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
+  const handleAssetsFetch = useCallback(async () => {
+    try {
+      const response = await fetch("/api/assets?limit=100");
+
+      if (!response.ok) {
+        throw new Error(`Failed to load assets: ${response.status}`);
+      }
+
+      const payload: ApiResponse<AssetsResponse[]> = await response.json();
+
+      if (payload.success) {
+        setAssets(payload.data.map(parseAsset));
+      }
+    } catch (error) {
+      console.error("Error fetching assets:", error);
+      setAssets([]);
+    }
+  }, [parseAsset]);
+
+  useEffect(() => {
+    void handleStatsFetch();
+    void handleAssetsFetch();
+  }, [handleStatsFetch, handleAssetsFetch]);
+
+  const handleAssetSelection = useCallback((asset: DashboardAsset) => {
+    setSelectedAsset(asset);
+    setIsAssetDetailsOpen(true);
+  }, []);
+
+  const handleProjectManagerClose = useCallback(() => {
+    setIsProjectManagerOpen(false);
+    void handleStatsFetch();
+    void handleAssetsFetch();
+  }, [handleStatsFetch, handleAssetsFetch]);
+
+  const closeAssetDetails = useCallback(() => {
+    setIsAssetDetailsOpen(false);
+    setSelectedAsset(null);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <h1 className="text-3xl font-bold text-gray-900">Asset Management Dashboard</h1>
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setActiveTab('overview')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  activeTab === 'overview'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => setActiveTab('assets')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  activeTab === 'assets'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Assets
-              </button>
-              <button
-                onClick={() => setActiveTab('projects')}
-                className={`px-4 py-2 rounded-lg transition-colors ${
-                  activeTab === 'projects'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                Projects
-              </button>
+    <div className="space-y-8">
+      {statsLoading ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((item) => (
+            <div
+              key={item}
+              className="animate-pulse rounded-lg bg-white p-6 shadow"
+            >
+              <div className="mb-2 h-4 rounded bg-gray-200" />
+              <div className="mb-2 h-8 rounded bg-gray-200" />
+              <div className="h-4 rounded bg-gray-200" />
+            </div>
+          ))}
+        </div>
+      ) : stats ? (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Assets"
+            value={stats.summary.totalAssets}
+            icon={<BarChart3 className="h-10 w-10" />}
+          />
+          <StatCard
+            title="Total Projects"
+            value={stats.summary.totalProjects}
+            icon={<ClipboardList className="h-10 w-10" />}
+          />
+          <StatCard
+            title="Assigned Projects"
+            value={stats.summary.assignedProjects}
+            subtitle={`${stats.summary.assignmentRate}% assignment rate`}
+            icon={<Briefcase className="h-10 w-10" />}
+          />
+          <StatCard
+            title="Unassigned Projects"
+            value={stats.summary.unassignedProjects}
+            icon={<FolderX className="h-10 w-10" />}
+          />
+        </div>
+      ) : null}
+
+      <div className="rounded-lg bg-white p-6 shadow-lg">
+        <h2 className="mb-4 text-xl font-semibold">Asset Locations</h2>
+        <AssetMap
+          assets={assets}
+          // onAssetClick={handleAssetSelection}
+          onMapClick={(lat, lng) => {
+            console.info("Map clicked at:", { lat, lng });
+          }}
+          selectedAsset={selectedAsset}
+          height="500px"
+        />
+      </div>
+
+      {stats ? (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="rounded-lg bg-white p-6 shadow">
+            <h3 className="mb-4 text-lg font-semibold">Assets by Status</h3>
+            <div className="space-y-3">
+              {Object.entries(stats.assetsByStatus).map(([status, count]) => (
+                <div key={status} className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div
+                      className={`mr-3 h-3 w-3 rounded-full ${getStatusColor(status)}`}
+                    />
+                    <span className="capitalize">{status}</span>
+                  </div>
+                  <span className="font-medium">{count}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-lg bg-white p-6 shadow">
+            <h3 className="mb-4 text-lg font-semibold">Projects by Status</h3>
+            <div className="space-y-3">
+              {Object.entries(stats.projectsByStatus).map(([status, count]) => (
+                <div key={status} className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <div
+                      className={`mr-3 h-3 w-3 rounded-full ${getStatusColor(status, "project")}`}
+                    />
+                    <span className="capitalize">
+                      {status.replace("-", " ")}
+                    </span>
+                  </div>
+                  <span className="font-medium">{count}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === 'overview' && (
-          <div className="space-y-8">
-            {/* Stats Cards */}
-            {statsLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="bg-white rounded-lg shadow p-6 animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-8 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                  </div>
-                ))}
-              </div>
-            ) : stats ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatCard
-                  title="Total Assets"
-                  value={stats.summary.totalAssets}
-                  icon="🏢"
-                />
-                <StatCard
-                  title="Total Projects"
-                  value={stats.summary.totalProjects}
-                  icon="🏗️"
-                />
-                <StatCard
-                  title="Assigned Projects"
-                  value={stats.summary.assignedProjects}
-                  subtitle={`${stats.summary.assignmentRate}% assignment rate`}
-                  icon="📋"
-                />
-                <StatCard
-                  title="Unassigned Projects"
-                  value={stats.summary.unassignedProjects}
-                  icon="📝"
-                />
-              </div>
-            ) : null}
-
-            {/* Map Section */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-semibold mb-4">Asset Locations</h2>
-              <AssetMap
-                assets={assets}
-                onAssetClick={(asset) => {
-                  // Convert AssetMap's asset type to Dashboard's asset type
-                  const dashboardAsset: Asset = {
-                    ...asset,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                    projects: (asset.projects || []).map(p => ({
-                      id: p.id,
-                      name: p.name,
-                      status: 'active',
-                      assignedAt: p.assignedAt ? (typeof p.assignedAt === 'string' ? p.assignedAt : p.assignedAt.toISOString()) : undefined
-                    }))
-                  };
-                  handleAssetClick(dashboardAsset);
-                }}
-                onMapClick={handleMapClick}
-                selectedAsset={selectedAsset}
-                height="500px"
-              />
-            </div>
-
-            {/* Status Overview */}
-            {stats && (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Asset Status Distribution */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold mb-4">Assets by Status</h3>
-                  <div className="space-y-3">
-                    {Object.entries(stats.assetsByStatus).map(([status, count]) => (
-                      <div key={status} className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className={`w-3 h-3 rounded-full mr-3 ${getStatusColor(status)}`}></div>
-                          <span className="capitalize">{status}</span>
-                        </div>
-                        <span className="font-medium">{count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Project Status Distribution */}
-                <div className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold mb-4">Projects by Status</h3>
-                  <div className="space-y-3">
-                    {Object.entries(stats.projectsByStatus).map(([status, count]) => (
-                      <div key={status} className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className={`w-3 h-3 rounded-full mr-3 ${getStatusColor(status, 'project')}`}></div>
-                          <span className="capitalize">{status.replace('-', ' ')}</span>
-                        </div>
-                        <span className="font-medium">{count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Selected Asset/Project Details */}
-            {(selectedAsset || selectedProject) && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-lg font-semibold">
-                    {selectedAsset ? 'Selected Asset' : 'Selected Project'}
-                  </h3>
-                  <button
-                    onClick={() => {
-                      setSelectedAsset(null);
-                      setSelectedProject(null);
-                    }}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    ×
-                  </button>
-                </div>
-
-                {selectedAsset && (
-                  <div>
-                    <h4 className="font-medium text-lg mb-2">{selectedAsset.name}</h4>
-                    <p className="text-gray-600 mb-4">{selectedAsset.description}</p>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <span className="text-sm text-gray-500">Status:</span>
-                        <p className="font-medium capitalize">{selectedAsset.status}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-gray-500">Location:</span>
-                        <p className="font-medium">
-                          {selectedAsset.location.lat.toFixed(4)}, {selectedAsset.location.lng.toFixed(4)}
-                        </p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-gray-500">Projects:</span>
-                        <p className="font-medium">{selectedAsset.projects.length}</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setShowProjectManager(true)}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Manage Projects
-                    </button>
-                  </div>
-                )}
-
-                {selectedProject && (
-                  <div>
-                    <h4 className="font-medium text-lg mb-2">{selectedProject.name}</h4>
-                    {selectedProject.description && (
-                      <p className="text-gray-600 mb-4">{selectedProject.description}</p>
-                    )}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                      <div>
-                        <span className="text-sm text-gray-500">Status:</span>
-                        <p className="font-medium capitalize">{selectedProject.status.replace('-', ' ')}</p>
-                      </div>
-                      <div>
-                        <span className="text-sm text-gray-500">Asset:</span>
-                        <p className="font-medium">
-                          {selectedProject.asset ? selectedProject.asset.name : 'Unassigned'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+      {selectedAsset ? (
+        <div className="rounded-lg bg-white p-6 shadow">
+          <div className="mb-4 flex items-start justify-between">
+            <h3 className="text-lg font-semibold">Selected Asset</h3>
+            <button
+              type="button"
+              onClick={closeAssetDetails}
+              className="text-gray-400 transition-colors hover:text-gray-600"
+              aria-label="Clear selection"
+            >
+              <X className="h-5 w-5" aria-hidden />
+            </button>
           </div>
-        )}
 
-        {activeTab === 'assets' && (
-          <AssetList 
-            onAssetSelect={handleAssetClick}
-            selectedAssetId={selectedAsset?.id}
-          />
-        )}
+          <h4 className="mb-2 text-lg font-medium">{selectedAsset.name}</h4>
+          <p className="mb-4 text-gray-600">{selectedAsset.description}</p>
+          <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div>
+              <span className="text-sm text-gray-500">Status:</span>
+              <p className="font-medium capitalize">{selectedAsset.status}</p>
+            </div>
+            <div>
+              <span className="text-sm text-gray-500">Location:</span>
+              <p className="font-medium">
+                {selectedAsset.location.lat.toFixed(4)},{" "}
+                {selectedAsset.location.lng.toFixed(4)}
+              </p>
+            </div>
+            <div>
+              <span className="text-sm text-gray-500">Projects:</span>
+              <p className="font-medium">{selectedAsset.projects.length}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setIsProjectManagerOpen(true);
+            }}
+            className="rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-blue-700"
+          >
+            Manage Projects
+          </button>
+        </div>
+      ) : null}
 
-        {activeTab === 'projects' && (
-          <ProjectList 
-            onProjectSelect={handleProjectClick}
-            selectedProjectId={selectedProject?.id}
-          />
-        )}
-      </div>
-
-      {/* Asset Project Manager Modal */}
-      {showProjectManager && selectedAsset && (
+      {isProjectManagerOpen && selectedAsset ? (
         <AssetProjectManager
           assetId={selectedAsset.id}
-          onClose={() => {
-            setShowProjectManager(false);
-            fetchStats(); // Refresh stats after changes
-            fetchAssets(); // Refresh assets
-          }}
+          onClose={handleProjectManagerClose}
         />
-      )}
+      ) : null}
 
-      {/* Asset Details Sheet */}
       <AssetDetailsSheet
         asset={selectedAsset}
-        isOpen={showAssetDetails}
-        onClose={() => {
-          setShowAssetDetails(false);
-          setSelectedAsset(null);
-        }}
+        isOpen={isAssetDetailsOpen}
+        onClose={closeAssetDetails}
         onManageProjects={(assetId) => {
-          setShowAssetDetails(false);
-          setShowProjectManager(true);
+          setIsAssetDetailsOpen(false);
+          setIsProjectManagerOpen(true);
+          void handleStatsFetch();
+          void handleAssetsFetch();
         }}
       />
     </div>

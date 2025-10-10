@@ -11,6 +11,42 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
+function coerceTimestamp(fieldLabel: string) {
+  return z.preprocess((value) => {
+    if (value instanceof Date) {
+      return value;
+    }
+
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+
+      if (trimmed.length === 0) {
+        return undefined;
+      }
+
+      const parsed = new Date(trimmed);
+
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed;
+      }
+
+      return value;
+    }
+
+    if (typeof value === "number") {
+      const parsed = new Date(value);
+
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed;
+      }
+
+      return value;
+    }
+
+    return value;
+  }, z.date({}));
+}
+
 // Users table
 export const users = pgTable(
   "users",
@@ -147,6 +183,8 @@ export const insertAssetSchema = createInsertSchema(assets, {
       .min(-180, "Longitude must be between -180 and 180")
       .max(180, "Longitude must be between -180 and 180"),
   }),
+  auctionDate: coerceTimestamp("Auction date"),
+  dateOfCertificationOfSale: coerceTimestamp("Certification of sale date"),
   status: z
     .enum(["active", "inactive", "maintenance", "retired"])
     .default("active"),
@@ -202,6 +240,18 @@ export const updateProjectSchema = insertProjectSchema
   .partial()
   .omit({ id: true, createdAt: true });
 
+// Case status schemas
+export const insertCaseStatusSchema = createInsertSchema(case_status, {
+  rtc: z.string().min(1, "RTC is required").trim(),
+  case_no: z.string().min(1, "Case number is required").trim(),
+  lastUpdatedAt: coerceTimestamp("Last updated at"),
+  details: z.string().optional(),
+  judge: z.string().optional(),
+});
+
+export const selectCaseStatusSchema = createSelectSchema(case_status);
+export const updateCaseStatusSchema = insertCaseStatusSchema.partial().omit({ id: true });
+
 // User schemas
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email("Invalid email address").trim().toLowerCase(),
@@ -223,5 +273,9 @@ export type Asset = typeof assets.$inferSelect;
 export type NewAsset = typeof assets.$inferInsert;
 export type Project = typeof projects.$inferSelect;
 export type NewProject = typeof projects.$inferInsert;
+export type CaseStatus = typeof case_status.$inferSelect;
+export type NewCaseStatus = typeof case_status.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+
+
