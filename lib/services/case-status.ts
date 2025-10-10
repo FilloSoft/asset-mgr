@@ -178,5 +178,3 @@ export async function bulkDeleteCaseStatuses(ids: string[]): Promise<CaseStatus[
     .returning();
 }
 
-
-
