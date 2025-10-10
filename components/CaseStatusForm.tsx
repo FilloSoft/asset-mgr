@@ -2,17 +2,17 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 
-type CaseStatusPayload = {
+export type CaseStatusFormPayload = {
   rtc: string;
   case_no: string;
   lastUpdatedAt: string;
-  judge?: string;
-  details?: string;
+  judge?: string | null;
+  details?: string | null;
 };
 
 interface CaseStatusFormProps {
-  initialValues?: Partial<CaseStatusPayload>;
-  onSubmit: (payload: CaseStatusPayload) => Promise<void> | void;
+  initialValues?: Partial<CaseStatusFormPayload>;
+  onSubmit: (payload: CaseStatusFormPayload) => Promise<void> | void;
   onCancel: () => void;
   submitLabel?: string;
   isSubmitting?: boolean;
@@ -56,7 +56,7 @@ export default function CaseStatusForm({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const payload: CaseStatusPayload = {
+    const payload: CaseStatusFormPayload = {
       rtc: rtc.trim(),
       case_no: caseNo.trim(),
       lastUpdatedAt: new Date(lastUpdatedAt).toISOString(),
@@ -160,6 +160,7 @@ export default function CaseStatusForm({
     </form>
   );
 }
+
 
 
 

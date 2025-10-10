@@ -44,7 +44,9 @@ function buildCaseStatusWhere(filters: CaseStatusFilters): SQL | undefined {
       ilike(case_status.judge, `%${searchTerm}%`),
     );
 
-    conditions.push(searchCondition);
+    if (searchCondition) {
+      conditions.push(searchCondition);
+    }
   }
 
   if (conditions.length === 0) {
@@ -175,4 +177,6 @@ export async function bulkDeleteCaseStatuses(ids: string[]): Promise<CaseStatus[
     .where(inArray(case_status.id, ids))
     .returning();
 }
+
+
 

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import CaseStatusForm from './CaseStatusForm';
+import CaseStatusForm, { CaseStatusFormPayload } from './CaseStatusForm';
 
 interface CaseStatusRecord {
   id: string;
@@ -145,13 +145,7 @@ export default function CaseStatusList() {
   }, [page, searchTerm, fetchCaseStatuses]);
 
   const handleFormSubmit = useCallback(
-    async (formData: {
-      rtc: string;
-      case_no: string;
-      lastUpdatedAt: string;
-      judge?: string;
-      details?: string;
-    }) => {
+    async (formData: CaseStatusFormPayload) => {
       try {
         setFormSubmitting(true);
         const endpoint = editingRecord
@@ -359,4 +353,5 @@ export default function CaseStatusList() {
     </div>
   );
 }
+
 
