@@ -20,11 +20,13 @@ COPY . .
 # Accept build arguments
 ARG NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
 ARG JWT_SECRET=default-jwt-secret-please-change-in-production
+ARG DATABASE_URL
 
 # Set default environment variables for build
 ENV NODE_ENV=production
 ENV JWT_SECRET=${JWT_SECRET}
 ENV NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=${NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}
+ENV DATABASE_URL=${DATABASE_URL}
 
 # Build the Next.js application
 RUN pnpm build
