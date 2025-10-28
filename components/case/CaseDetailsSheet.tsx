@@ -7,6 +7,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import NotesPanel from "@/components/note/NotesPanel";
 import {
   CalendarClock,
   ClipboardCopy,
@@ -239,6 +240,8 @@ export default function CaseDetailsSheet({
               </div>
             </div>
           </section>
+
+          <NotesPanel entity="case" entityId={caseRecord.id} />
 
           {onEdit && (
             <div className="pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-end">

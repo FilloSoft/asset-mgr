@@ -7,6 +7,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import NotesPanel from "@/components/note/NotesPanel";
 import {
   Calendar,
   ClipboardList,
@@ -247,6 +248,8 @@ export default function ProjectDetailsSheet({
               </div>
             )}
           </div>
+
+          <NotesPanel entity="project" entityId={project.id} />
 
           <div className="space-y-2 text-xs text-gray-500 dark:text-gray-400">
             <div className="flex items-center justify-between">

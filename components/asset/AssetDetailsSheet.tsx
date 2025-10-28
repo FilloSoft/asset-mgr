@@ -7,6 +7,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import NotesPanel from "@/components/note/NotesPanel";
 import {
   MapPin,
   Copy,
@@ -340,6 +341,8 @@ export default function AssetDetailsSheet({
               </div>
             )}
           </div>
+
+          <NotesPanel entity="asset" entityId={asset.id} />
 
           {/* Actions */}
           <div className="flex gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">

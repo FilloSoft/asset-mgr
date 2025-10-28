@@ -163,10 +163,36 @@ export const case_status = pgTable(
   ],
 );
 
+export const notes = pgTable(
+  "notes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    content: text("content").notNull(),
+    assetId: uuid("asset_id").references(() => assets.id, {
+      onDelete: "set null",
+    }),
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
+    caseId: uuid("case_id").references(() => case_status.id, {
+      onDelete: "set null",
+    }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("notes_asset_idx").on(table.assetId),
+    index("notes_project_idx").on(table.projectId),
+    index("notes_case_idx").on(table.caseId),
+    index("notes_created_at_idx").on(table.createdAt),
+  ],
+);
+
 // Define relationships
 export const assetsRelations = relations(assets, ({ many }) => ({
   projects: many(projects),
   cases: many(case_status),
+  notes: many(notes),
 }));
 
 export const projectsRelations = relations(projects, ({ one, many }) => ({
@@ -175,9 +201,10 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     references: [assets.id],
   }),
   cases: many(case_status),
+  notes: many(notes),
 }));
 
-export const caseStatusRelations = relations(case_status, ({ one }) => ({
+export const caseStatusRelations = relations(case_status, ({ one, many }) => ({
   asset: one(assets, {
     fields: [case_status.assetId],
     references: [assets.id],
@@ -185,6 +212,22 @@ export const caseStatusRelations = relations(case_status, ({ one }) => ({
   project: one(projects, {
     fields: [case_status.projectId],
     references: [projects.id],
+  }),
+  notes: many(notes),
+}));
+
+export const notesRelations = relations(notes, ({ one }) => ({
+  asset: one(assets, {
+    fields: [notes.assetId],
+    references: [assets.id],
+  }),
+  project: one(projects, {
+    fields: [notes.projectId],
+    references: [projects.id],
+  }),
+  case: one(case_status, {
+    fields: [notes.caseId],
+    references: [case_status.id],
   }),
 }));
 
@@ -275,6 +318,26 @@ export const updateCaseStatusSchema = insertCaseStatusSchema
   .partial()
   .omit({ id: true });
 
+const baseInsertNoteSchema = createInsertSchema(notes, {
+  content: z.string().min(1, "Note content is required").trim(),
+  assetId: z.string().uuid("Invalid asset ID").optional().nullable(),
+  projectId: z.string().uuid("Invalid project ID").optional().nullable(),
+  caseId: z.string().uuid("Invalid case ID").optional().nullable(),
+});
+
+export const insertNoteSchema = baseInsertNoteSchema.refine(
+  (data) => data.assetId || data.projectId || data.caseId,
+  {
+    message: "A note must be linked to an asset, project, or case",
+    path: ["assetId"],
+  },
+);
+
+export const selectNoteSchema = createSelectSchema(notes);
+export const updateNoteSchema = insertNoteSchema
+  .partial()
+  .omit({ id: true, createdAt: true });
+
 // User schemas
 export const insertUserSchema = createInsertSchema(users, {
   email: z.string().email("Invalid email address").trim().toLowerCase(),
@@ -300,3 +363,5 @@ export type CaseStatus = typeof case_status.$inferSelect;
 export type NewCaseStatus = typeof case_status.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
+export type Note = typeof notes.$inferSelect;
+export type NewNote = typeof notes.$inferInsert;
