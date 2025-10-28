@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Sheet,
@@ -7,7 +7,15 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { MapPin, Copy, ExternalLink, Calendar, Hash, Activity, FolderOpen } from 'lucide-react';
+import {
+  MapPin,
+  Copy,
+  ExternalLink,
+  Calendar,
+  Hash,
+  Activity,
+  FolderOpen,
+} from "lucide-react";
 
 interface ProjectSummary {
   id: string;
@@ -24,7 +32,7 @@ interface Asset {
     lat: number;
     lng: number;
   };
-  status: 'active' | 'inactive' | 'maintenance' | 'retired';
+  status: "active" | "inactive" | "maintenance" | "retired";
   projects: ProjectSummary[];
   createdAt?: string;
   updatedAt?: string;
@@ -39,73 +47,79 @@ interface AssetDetailsSheetProps {
 
 const statusColors = {
   active: {
-    bg: 'bg-green-500',
-    text: 'text-white',
-    border: 'border-green-300',
-    shadow: 'shadow-green-200',
+    bg: "bg-green-500",
+    text: "text-white",
+    border: "border-green-300",
+    shadow: "shadow-green-200",
   },
   inactive: {
-    bg: 'bg-gray-500',
-    text: 'text-white',
-    border: 'border-gray-300',
-    shadow: 'shadow-gray-200',
+    bg: "bg-gray-500",
+    text: "text-white",
+    border: "border-gray-300",
+    shadow: "shadow-gray-200",
   },
   maintenance: {
-    bg: 'bg-amber-500',
-    text: 'text-white',
-    border: 'border-amber-300',
-    shadow: 'shadow-amber-200',
+    bg: "bg-amber-500",
+    text: "text-white",
+    border: "border-amber-300",
+    shadow: "shadow-amber-200",
   },
   retired: {
-    bg: 'bg-red-500',
-    text: 'text-white',
-    border: 'border-red-300',
-    shadow: 'shadow-red-200',
+    bg: "bg-red-500",
+    text: "text-white",
+    border: "border-red-300",
+    shadow: "shadow-red-200",
   },
 };
 
 const statusIcons = {
-  active: '🚀',
-  inactive: '😴',
-  maintenance: '⚡',
-  retired: '💀',
+  active: "🚀",
+  inactive: "😴",
+  maintenance: "⚡",
+  retired: "💀",
 };
 
 const projectStatusColors = {
   planning: {
-    bg: 'bg-blue-500',
-    text: 'text-white',
+    bg: "bg-blue-500",
+    text: "text-white",
   },
   active: {
-    bg: 'bg-green-500',
-    text: 'text-white', 
+    bg: "bg-green-500",
+    text: "text-white",
   },
-  'on-hold': {
-    bg: 'bg-amber-500',
-    text: 'text-white',
+  "on-hold": {
+    bg: "bg-amber-500",
+    text: "text-white",
   },
   completed: {
-    bg: 'bg-purple-500',
-    text: 'text-white',
+    bg: "bg-purple-500",
+    text: "text-white",
   },
   cancelled: {
-    bg: 'bg-red-500',
-    text: 'text-white',
+    bg: "bg-red-500",
+    text: "text-white",
   },
 };
 
-export default function AssetDetailsSheet({ asset, isOpen, onClose, onManageProjects }: AssetDetailsSheetProps) {
+export default function AssetDetailsSheet({
+  asset,
+  isOpen,
+  onClose,
+  onManageProjects,
+}: AssetDetailsSheetProps) {
   if (!asset) return null;
 
   const formatDate = (dateString?: string | Date) => {
-    if (!dateString) return 'N/A';
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    if (!dateString) return "N/A";
+    const date =
+      typeof dateString === "string" ? new Date(dateString) : dateString;
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -114,7 +128,7 @@ export default function AssetDetailsSheet({ asset, isOpen, onClose, onManageProj
       await navigator.clipboard.writeText(text);
       // Could add a toast notification here
     } catch (err) {
-      console.error('Failed to copy text: ', err);
+      console.error("Failed to copy text: ", err);
     }
   };
 
@@ -123,21 +137,23 @@ export default function AssetDetailsSheet({ asset, isOpen, onClose, onManageProj
       <SheetContent className="w-[400px] sm:w-[540px] p-0 bg-white dark:bg-slate-900">
         {/* Hero Header */}
         <div className="text-white">
-            <SheetHeader className="text-left">
-              <SheetTitle className="flex items-center gap-4 text-2xl font-bold">
-                <div className="text-4xl">{statusIcons[asset.status]}</div>
-                <div>
-                  <div className="text-2xl font-bold">{asset.name}</div>
-                  <div className="text-sm font-normal mt-1">Asset Details</div>
-                </div>
-              </SheetTitle>
-            </SheetHeader>
+          <SheetHeader className="text-left">
+            <SheetTitle className="flex items-center gap-4 text-2xl font-bold">
+              <div className="text-4xl">{statusIcons[asset.status]}</div>
+              <div>
+                <div className="text-2xl font-bold">{asset.name}</div>
+                <div className="text-sm font-normal mt-1">Asset Details</div>
+              </div>
+            </SheetTitle>
+          </SheetHeader>
         </div>
 
-        <div className="p-4 space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto">
+        <div className="p-4 space-y-4 max-h-[calc(100vh)] overflow-y-auto">
           {/* Status Badge */}
           <div className="flex items-center justify-center">
-            <div className={`px-4 py-2 rounded-full font-medium text-sm backdrop-blur-sm transform hover:scale-105 transition-all duration-200 ${statusColors[asset.status].bg} ${statusColors[asset.status].text} shadow-md`}>
+            <div
+              className={`px-4 py-2 rounded-full font-medium text-sm backdrop-blur-sm transform hover:scale-105 transition-all duration-200 ${statusColors[asset.status].bg} ${statusColors[asset.status].text} shadow-md`}
+            >
               <Activity className="inline-block w-4 h-4 mr-2" />
               {asset.status.charAt(0).toUpperCase() + asset.status.slice(1)}
             </div>
@@ -164,14 +180,16 @@ export default function AssetDetailsSheet({ asset, isOpen, onClose, onManageProj
               <Hash className="w-4 h-4 text-purple-600" />
               Asset Information
             </div>
-            
+
             <div className="grid grid-cols-1 gap-3">
               {/* Asset ID */}
               <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <Hash className="w-3 h-3 text-blue-600" />
-                    <span className="font-medium text-gray-700 dark:text-gray-300 text-sm">Asset ID</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300 text-sm">
+                      Asset ID
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-gray-800 dark:text-gray-200">
@@ -193,14 +211,21 @@ export default function AssetDetailsSheet({ asset, isOpen, onClose, onManageProj
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <MapPin className="w-3 h-3 text-emerald-600" />
-                    <span className="font-medium text-gray-700 dark:text-gray-300 text-sm">Location</span>
+                    <span className="font-medium text-gray-700 dark:text-gray-300 text-sm">
+                      Location
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-mono text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-gray-800 dark:text-gray-200">
-                      {asset.location.lat.toFixed(4)}, {asset.location.lng.toFixed(4)}
+                      {asset.location.lat.toFixed(4)},{" "}
+                      {asset.location.lng.toFixed(4)}
                     </span>
                     <button
-                      onClick={() => copyToClipboard(`${asset.location.lat}, ${asset.location.lng}`)}
+                      onClick={() =>
+                        copyToClipboard(
+                          `${asset.location.lat}, ${asset.location.lng}`,
+                        )
+                      }
                       className="flex items-center gap-1 text-xs bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded transition-all duration-200 hover:scale-105"
                     >
                       <Copy className="w-3 h-3" />
@@ -216,7 +241,9 @@ export default function AssetDetailsSheet({ asset, isOpen, onClose, onManageProj
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-3 h-3 text-purple-600" />
-                      <span className="font-medium text-gray-700 dark:text-gray-300 text-sm">Created</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300 text-sm">
+                        Created
+                      </span>
                     </div>
                     <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-gray-800 dark:text-gray-200">
                       {formatDate(asset.createdAt)}
@@ -230,7 +257,9 @@ export default function AssetDetailsSheet({ asset, isOpen, onClose, onManageProj
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-3 h-3 text-amber-600" />
-                      <span className="font-medium text-gray-700 dark:text-gray-300 text-sm">Last Updated</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300 text-sm">
+                        Last Updated
+                      </span>
                     </div>
                     <span className="text-xs bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-gray-800 dark:text-gray-200">
                       {formatDate(asset.updatedAt)}
@@ -262,34 +291,47 @@ export default function AssetDetailsSheet({ asset, isOpen, onClose, onManageProj
             {asset.projects.length === 0 ? (
               <div className="bg-white dark:bg-slate-800 rounded-lg p-6 text-center border border-gray-200 dark:border-slate-700 shadow-sm">
                 <div className="text-3xl mb-2">📋</div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">No Projects Yet</p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">This asset hasn't been assigned to any projects</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  No Projects Yet
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-500">
+                  This asset hasn't been assigned to any projects
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
                 {asset.projects.map((project, index) => (
-                  <div key={project.id} className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-200">
+                  <div
+                    key={project.id}
+                    className="bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-200"
+                  >
                     <div className="p-3 space-y-2">
                       <div className="flex justify-between items-start">
                         <h4 className="font-medium text-sm text-gray-800 dark:text-gray-200">
                           {project.name}
                         </h4>
                         {project.status && (
-                          <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            projectStatusColors[project.status as keyof typeof projectStatusColors]?.bg || 'bg-gray-500'
-                          } ${projectStatusColors[project.status as keyof typeof projectStatusColors]?.text || 'text-white'}`}>
-                            {project.status.replace('-', ' ').toUpperCase()}
+                          <div
+                            className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              projectStatusColors[
+                                project.status as keyof typeof projectStatusColors
+                              ]?.bg || "bg-gray-500"
+                            } ${projectStatusColors[project.status as keyof typeof projectStatusColors]?.text || "text-white"}`}
+                          >
+                            {project.status.replace("-", " ").toUpperCase()}
                           </div>
                         )}
                       </div>
-                      
+
                       {project.assignedAt && (
                         <div className="flex justify-between items-center text-xs">
                           <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                             <Calendar className="w-3 h-3" />
                             <span>Assigned</span>
                           </div>
-                          <span className="font-medium text-gray-700 dark:text-gray-300">{formatDate(project.assignedAt)}</span>
+                          <span className="font-medium text-gray-700 dark:text-gray-300">
+                            {formatDate(project.assignedAt)}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -304,7 +346,7 @@ export default function AssetDetailsSheet({ asset, isOpen, onClose, onManageProj
             <button
               onClick={() => {
                 const url = `https://maps.google.com/maps?q=${asset.location.lat},${asset.location.lng}`;
-                window.open(url, '_blank');
+                window.open(url, "_blank");
               }}
               className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 shadow-md"
             >

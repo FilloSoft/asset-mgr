@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import AssetForm from './AssetForm';
+import { useState, useEffect } from "react";
+import AssetForm from "./AssetForm";
 
 interface Asset {
   id: string;
@@ -12,11 +12,22 @@ interface Asset {
   marketValue: string;
   assessedValue: string;
   carStatus?: string;
+  address: string;
+  taxDeclarationNo: string;
+  tctNo: string;
+  areaPerSqM: string;
+  locationOfPropery: string;
+  barangay: string;
+  bidder: string;
+  entryNo: string;
+  detailsShortUpdateLog: string;
+  auctionDate: string;
+  dateOfCertificationOfSale: string;
   location: {
     lat: number;
     lng: number;
   };
-  status: 'active' | 'inactive' | 'maintenance' | 'retired';
+  status: "active" | "inactive" | "maintenance" | "retired";
   projects: Array<{
     id: string;
     name: string;
@@ -32,7 +43,10 @@ interface AssetListProps {
   selectedAssetId?: string;
 }
 
-export default function AssetList({ onAssetSelect, selectedAssetId }: AssetListProps) {
+export default function AssetList({
+  onAssetSelect,
+  selectedAssetId,
+}: AssetListProps) {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,19 +54,19 @@ export default function AssetList({ onAssetSelect, selectedAssetId }: AssetListP
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [deletingAsset, setDeletingAsset] = useState<Asset | null>(null);
   const [formLoading, setFormLoading] = useState(false);
-  
+
   // Filter and pagination states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchAssets = async (page = 1, search = '', status = '') => {
+  const fetchAssets = async (page = 1, search = "", status = "") => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         page: page.toString(),
-        limit: '10',
+        limit: "10",
         ...(search && { search }),
         ...(status && { status }),
       });
@@ -65,10 +79,10 @@ export default function AssetList({ onAssetSelect, selectedAssetId }: AssetListP
         setTotalPages(data.pagination.pages);
         setCurrentPage(data.pagination.page);
       } else {
-        setError(data.error || 'Failed to fetch assets');
+        setError(data.error || "Failed to fetch assets");
       }
     } catch (err) {
-      setError('Error fetching assets');
+      setError("Error fetching assets");
       console.error(err);
     } finally {
       setLoading(false);
@@ -82,10 +96,10 @@ export default function AssetList({ onAssetSelect, selectedAssetId }: AssetListP
   const handleCreateAsset = async (formData: any) => {
     try {
       setFormLoading(true);
-      const response = await fetch('/api/assets', {
-        method: 'POST',
+      const response = await fetch("/api/assets", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
@@ -96,11 +110,11 @@ export default function AssetList({ onAssetSelect, selectedAssetId }: AssetListP
         setShowForm(false);
         fetchAssets(currentPage, searchTerm, statusFilter);
       } else {
-        throw new Error(data.error || 'Failed to create asset');
+        throw new Error(data.error || "Failed to create asset");
       }
     } catch (err) {
-      console.error('Error creating asset:', err);
-      alert('Failed to create asset. Please try again.');
+      console.error("Error creating asset:", err);
+      alert("Failed to create asset. Please try again.");
     } finally {
       setFormLoading(false);
     }
@@ -112,9 +126,9 @@ export default function AssetList({ onAssetSelect, selectedAssetId }: AssetListP
     try {
       setFormLoading(true);
       const response = await fetch(`/api/assets/${editingAsset.id}`, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
@@ -125,24 +139,28 @@ export default function AssetList({ onAssetSelect, selectedAssetId }: AssetListP
         setEditingAsset(null);
         fetchAssets(currentPage, searchTerm, statusFilter);
       } else {
-        throw new Error(data.error || 'Failed to update asset');
+        throw new Error(data.error || "Failed to update asset");
       }
     } catch (err) {
-      console.error('Error updating asset:', err);
-      alert('Failed to update asset. Please try again.');
+      console.error("Error updating asset:", err);
+      alert("Failed to update asset. Please try again.");
     } finally {
       setFormLoading(false);
     }
   };
 
   const handleDeleteAsset = async (asset: Asset) => {
-    if (!confirm(`Are you sure you want to delete "${asset.name}"? This will unassign all related projects.`)) {
+    if (
+      !confirm(
+        `Are you sure you want to delete "${asset.name}"? This will unassign all related projects.`,
+      )
+    ) {
       return;
     }
 
     try {
       const response = await fetch(`/api/assets/${asset.id}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
       const data = await response.json();
@@ -150,21 +168,26 @@ export default function AssetList({ onAssetSelect, selectedAssetId }: AssetListP
       if (data.success) {
         fetchAssets(currentPage, searchTerm, statusFilter);
       } else {
-        throw new Error(data.error || 'Failed to delete asset');
+        throw new Error(data.error || "Failed to delete asset");
       }
     } catch (err) {
-      console.error('Error deleting asset:', err);
-      alert('Failed to delete asset. Please try again.');
+      console.error("Error deleting asset:", err);
+      alert("Failed to delete asset. Please try again.");
     }
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'maintenance': return 'bg-yellow-100 text-yellow-800';
-      case 'retired': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "active":
+        return "bg-green-100 text-green-800";
+      case "inactive":
+        return "bg-gray-100 text-gray-800";
+      case "maintenance":
+        return "bg-yellow-100 text-yellow-800";
+      case "retired":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -199,7 +222,10 @@ export default function AssetList({ onAssetSelect, selectedAssetId }: AssetListP
       <div className="bg-white p-4 rounded-lg shadow">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="search"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Search
             </label>
             <input
@@ -215,7 +241,10 @@ export default function AssetList({ onAssetSelect, selectedAssetId }: AssetListP
             />
           </div>
           <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="status"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Status
             </label>
             <select
@@ -237,8 +266,8 @@ export default function AssetList({ onAssetSelect, selectedAssetId }: AssetListP
           <div className="flex items-end">
             <button
               onClick={() => {
-                setSearchTerm('');
-                setStatusFilter('');
+                setSearchTerm("");
+                setStatusFilter("");
                 setCurrentPage(1);
               }}
               className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
@@ -277,25 +306,33 @@ export default function AssetList({ onAssetSelect, selectedAssetId }: AssetListP
             <div
               key={asset.id}
               className={`bg-white rounded-lg shadow-md p-6 cursor-pointer transition-all hover:shadow-lg ${
-                selectedAssetId === asset.id ? 'ring-2 ring-blue-500' : ''
+                selectedAssetId === asset.id ? "ring-2 ring-blue-500" : ""
               }`}
               onClick={() => onAssetSelect?.(asset)}
             >
               <div className="flex items-start justify-between mb-3">
-                <h3 className="text-lg font-semibold text-gray-900 truncate">{asset.name}</h3>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(asset.status)}`}>
+                <h3 className="text-lg font-semibold text-gray-900 truncate">
+                  {asset.name}
+                </h3>
+                <span
+                  className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(asset.status)}`}
+                >
                   {asset.status}
                 </span>
               </div>
 
-              <p className="text-gray-600 text-sm mb-3 line-clamp-2">{asset.description}</p>
+              <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                {asset.description}
+              </p>
 
               <div className="text-xs text-gray-500 mb-3">
-                📍 {asset.location.lat.toFixed(4)}, {asset.location.lng.toFixed(4)}
+                📍 {asset.location.lat.toFixed(4)},{" "}
+                {asset.location.lng.toFixed(4)}
               </div>
 
               <div className="text-xs text-gray-500 mb-4">
-                🏗️ {asset.projects.length} project{asset.projects.length !== 1 ? 's' : ''}
+                🏗️ {asset.projects.length} project
+                {asset.projects.length !== 1 ? "s" : ""}
               </div>
 
               <div className="flex justify-end space-x-2">
@@ -327,9 +364,13 @@ export default function AssetList({ onAssetSelect, selectedAssetId }: AssetListP
       {!loading && assets.length === 0 && (
         <div className="text-center py-12">
           <div className="text-gray-400 text-6xl mb-4">🏢</div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No assets found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No assets found
+          </h3>
           <p className="text-gray-600 mb-4">
-            {searchTerm || statusFilter ? 'No assets match your current filters.' : 'Get started by creating your first asset.'}
+            {searchTerm || statusFilter
+              ? "No assets match your current filters."
+              : "Get started by creating your first asset."}
           </p>
           <button
             onClick={() => setShowForm(true)}
@@ -344,19 +385,21 @@ export default function AssetList({ onAssetSelect, selectedAssetId }: AssetListP
       {!loading && assets.length > 0 && totalPages > 1 && (
         <div className="flex justify-center space-x-2">
           <button
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
             className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Previous
           </button>
-          
+
           <span className="px-4 py-2 text-gray-700">
             Page {currentPage} of {totalPages}
           </span>
-          
+
           <button
-            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+            }
             disabled={currentPage === totalPages}
             className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >

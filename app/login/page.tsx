@@ -75,7 +75,6 @@ function LoginForm() {
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          // ... existing form code ...
           <div className="rounded-md shadow-sm -space-y-px">
             {isRegisterMode && (
               <div>
@@ -186,11 +185,13 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      }
+    >
       <LoginForm />
     </Suspense>
   );

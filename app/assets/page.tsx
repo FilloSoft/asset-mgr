@@ -1,8 +1,7 @@
-'use client';
-
-import Dashboard from '@/components/Dashboard';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { redirect } from 'next/navigation';
 
 export default function AssetsPage() {
-  return <Dashboard />;
+  redirect('/assets/overview');
+  return null;
 }
+

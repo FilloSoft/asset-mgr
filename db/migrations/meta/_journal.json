@@ -15,6 +15,13 @@
       "when": 1759851486231,
       "tag": "0001_purple_marten_broadcloak",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1760868712122,
+      "tag": "0002_premium_hydra",
+      "breakpoints": true
     }
   ]
 }

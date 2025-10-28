@@ -139,7 +139,7 @@ export const projects = pgTable(
 );
 
 export const case_status = pgTable(
-  "case_status",
+  "cases",
   {
     id: uuid("id").defaultRandom().primaryKey(),
     rtc: text("rtc").notNull(),
@@ -147,23 +147,44 @@ export const case_status = pgTable(
     lastUpdatedAt: timestamp("last_updated_at").notNull(),
     details: text("details"),
     judge: text("judge"),
+    assetId: uuid("asset_id").references(() => assets.id, {
+      onDelete: "set null",
+    }),
+    projectId: uuid("project_id").references(() => projects.id, {
+      onDelete: "set null",
+    }),
   },
   (table) => [
-    index("case_status_rtc_idx").on(table.rtc),
-    index("case_status_case_no_idx").on(table.case_no),
-    index("case_status_judge_idx").on(table.judge),
+    index("cases_rtc_idx").on(table.rtc),
+    index("cases_case_no_idx").on(table.case_no),
+    index("cases_judge_idx").on(table.judge),
+    index("cases_asset_idx").on(table.assetId),
+    index("cases_project_idx").on(table.projectId),
   ],
 );
 
 // Define relationships
 export const assetsRelations = relations(assets, ({ many }) => ({
   projects: many(projects),
+  cases: many(case_status),
 }));
 
-export const projectsRelations = relations(projects, ({ one }) => ({
+export const projectsRelations = relations(projects, ({ one, many }) => ({
   asset: one(assets, {
     fields: [projects.assetId],
     references: [assets.id],
+  }),
+  cases: many(case_status),
+}));
+
+export const caseStatusRelations = relations(case_status, ({ one }) => ({
+  asset: one(assets, {
+    fields: [case_status.assetId],
+    references: [assets.id],
+  }),
+  project: one(projects, {
+    fields: [case_status.projectId],
+    references: [projects.id],
   }),
 }));
 
@@ -202,7 +223,7 @@ export const insertProjectSchema = createInsertSchema(projects, {
   status: z
     .enum(["planning", "active", "on-hold", "completed", "cancelled"])
     .default("planning"),
-  assetId: z.string().uuid("Invalid asset ID").optional(),
+  assetId: z.union([z.string().uuid("Invalid asset ID"), z.null()]).optional(),
   startDate: z
     .union([
       z
